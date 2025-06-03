@@ -8,6 +8,7 @@ use Doctrine\DBAL\Exception;
 use Plan2net\Webp\Converter\Converter;
 use Plan2net\Webp\Converter\Exception\ConvertedFileLargerThanOriginalException;
 use Plan2net\Webp\Converter\Exception\WillNotRetryWithConfigurationException;
+use Plan2net\Webp\Exception\InvalidParametersForMimeType;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileInterface;
@@ -40,36 +41,30 @@ final class Webp
 
         $converterClass = Configuration::get('converter');
         $parameters = $this->getParametersForMimeType($originalFile->getMimeType());
-        if (!empty($parameters)) {
-            if ($this->hasFailedAttempt((int) $originalFile->getUid(), $parameters)) {
-                throw new WillNotRetryWithConfigurationException(\sprintf('Conversion for file "%s" failed before! Will not retry with this configuration!', $originalFilePath));
-            }
 
-            /** @var Converter $converter */
-            $converter = GeneralUtility::makeInstance($converterClass, $parameters);
-            $converter->convert($originalFilePath, $targetFilePath);
-            $fileSizeTargetFile = @\filesize($targetFilePath);
-            if ($fileSizeTargetFile && $originalFile->getSize() <= $fileSizeTargetFile) {
-                $this->saveFailedAttempt((int) $originalFile->getUid(), $parameters);
-                throw new ConvertedFileLargerThanOriginalException(\sprintf('Converted file (%s) is larger (%d vs. %d) than the original (%s)!', $targetFilePath, $fileSizeTargetFile, $originalFile->getSize(), $originalFilePath));
-            }
-            $processedFile->updateProperties(
-                [
-                    'width' => $originalFile->getProperty('width'),
-                    'height' => $originalFile->getProperty('height'),
-                    'size' => $fileSizeTargetFile,
-                ]
-            );
-
-            return;
+        if ($this->hasFailedAttempt((int)$originalFile->getUid(), $parameters)) {
+            throw new WillNotRetryWithConfigurationException(\sprintf('Conversion for file "%s" failed before! Will not retry with this configuration!', $originalFilePath));
         }
 
-        throw new \InvalidArgumentException(\sprintf('No options given for adapter "%s" and mime type "%s" (file "%s")!', $converterClass, $originalFile->getMimeType(), $originalFile->getIdentifier()));
+        /** @var Converter $converter */
+        $converter = GeneralUtility::makeInstance($converterClass, $parameters);
+        $converter->convert($originalFilePath, $targetFilePath);
+        $fileSizeTargetFile = @\filesize($targetFilePath);
+        if ($fileSizeTargetFile && $originalFile->getSize() <= $fileSizeTargetFile) {
+            $this->saveFailedAttempt((int)$originalFile->getUid(), $parameters);
+            throw new ConvertedFileLargerThanOriginalException(\sprintf('Converted file (%s) is larger (%d vs. %d) than the original (%s)!', $targetFilePath, $fileSizeTargetFile, $originalFile->getSize(), $originalFilePath));
+        }
+
+        $processedFile->updateProperties([
+            'width' => $originalFile->getProperty('width'),
+            'height' => $originalFile->getProperty('height'),
+            'size' => $fileSizeTargetFile,
+        ]);
     }
 
     public static function isSupportedMimeType(string $mimeType): bool
     {
-        $supportedMimeTypes = (string) Configuration::get('mime_types');
+        $supportedMimeTypes = (string)Configuration::get('mime_types');
         if (!empty($supportedMimeTypes)) {
             return \in_array(\strtolower($mimeType), \explode(',', \strtolower($supportedMimeTypes)), true);
         }
@@ -77,7 +72,7 @@ final class Webp
         return false;
     }
 
-    private function getParametersForMimeType(string $mimeType): ?string
+    private function getParametersForMimeType(string $mimeType): string
     {
         $parameters = \explode('|', Configuration::get('parameters'));
         foreach ($parameters as $parameter) {
@@ -93,7 +88,7 @@ final class Webp
             }
         }
 
-        return null;
+        throw new InvalidParametersForMimeType(\sprintf('No options given for adapter "%s" and mime type "%s" (file "%s")!', $converterClass, $originalFile->getMimeType(), $originalFile->getIdentifier()));
     }
 
     private function saveFailedAttempt(int $fileId, string $configuration): void

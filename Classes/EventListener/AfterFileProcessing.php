@@ -6,6 +6,7 @@ namespace Plan2net\Webp\EventListener;
 
 use Plan2net\Webp\Converter\Exception\ConvertedFileLargerThanOriginalException;
 use Plan2net\Webp\Converter\Exception\WillNotRetryWithConfigurationException;
+use Plan2net\Webp\Exception\InvalidParametersForMimeType;
 use Plan2net\Webp\Service\Configuration;
 use Plan2net\Webp\Service\Webp as WebpService;
 use TYPO3\CMS\Core\Log\LogManager;
@@ -73,6 +74,8 @@ final class AfterFileProcessing
 
                 // This will add or update
                 $processedFileRepository->add($processedFileWebp);
+            } catch (InvalidParametersForMimeType $e) {
+                $logger->debug($e->getMessage());
             } catch (WillNotRetryWithConfigurationException $e) {
                 $logger->notice($e->getMessage());
             } catch (ConvertedFileLargerThanOriginalException $e) {
