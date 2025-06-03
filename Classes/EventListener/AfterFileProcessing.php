@@ -115,6 +115,11 @@ final class AfterFileProcessing
             return false;
         }
 
+        // Avoid processing when processed file is parsed but not available
+        if (!$processedFile->exists()) {
+            return false;
+        }
+
         if ($this->originalFileIsInExcludedDirectory($processedFile->getOriginalFile())) {
             return false;
         }
