@@ -41,6 +41,9 @@ final class Webp
 
         $converterClass = Configuration::get('converter');
         $parameters = $this->getParametersForMimeType($originalFile->getMimeType());
+        if (empty($parameters)) {
+            throw new InvalidParametersForMimeType(\sprintf('No options given for adapter "%s" and mime type "%s" (file "%s")!', $converterClass, $originalFile->getMimeType(), $originalFile->getIdentifier()));
+        }
 
         if ($this->hasFailedAttempt((int)$originalFile->getUid(), $parameters)) {
             throw new WillNotRetryWithConfigurationException(\sprintf('Conversion for file "%s" failed before! Will not retry with this configuration!', $originalFilePath));
@@ -72,7 +75,7 @@ final class Webp
         return false;
     }
 
-    private function getParametersForMimeType(string $mimeType): string
+    private function getParametersForMimeType(string $mimeType): ?string
     {
         $parameters = \explode('|', Configuration::get('parameters'));
         foreach ($parameters as $parameter) {
@@ -88,7 +91,7 @@ final class Webp
             }
         }
 
-        throw new InvalidParametersForMimeType(\sprintf('No options given for adapter "%s" and mime type "%s" (file "%s")!', $converterClass, $originalFile->getMimeType(), $originalFile->getIdentifier()));
+        return null;
     }
 
     private function saveFailedAttempt(int $fileId, string $configuration): void
