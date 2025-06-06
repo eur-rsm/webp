@@ -32,7 +32,7 @@ final class AfterFileProcessing
     /**
      * Process a file using the configured adapter to create a webp copy.
      *
-     * @param FileInterface|File $file
+     * @param  FileInterface|File  $file
      */
     private function processFile(
         ProcessedFile $processedFile,
@@ -87,7 +87,7 @@ final class AfterFileProcessing
                         'Failed to convert image "%s" to webp with: %s',
                         $processedFile->getIdentifier(),
                         $e->getMessage()
-                    )
+                    ), ['exception' => $e]
                 );
                 $this->removeProcessedFile($processedFileWebp);
             }
@@ -105,7 +105,7 @@ final class AfterFileProcessing
         }
 
         // Convert images in any folder or only in the _processed_ folder
-        $convertAllImages = (bool) Configuration::get('convert_all');
+        $convertAllImages = (bool)Configuration::get('convert_all');
         if (!$convertAllImages && !$this->isFileInProcessingFolder($processedFile)) {
             return false;
         }
