@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Plan2net\Webp\Converter;
 
+use Plan2net\Webp\Converter\Exception\ImageNotCreatedException;
 use Plan2net\Webp\Service\Configuration;
 use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\Utility\CommandUtility;
@@ -29,7 +30,7 @@ final class MagickConverter extends AbstractConverter
         );
 
         if (!@\is_file($targetFilePath)) {
-            throw new \RuntimeException(\sprintf('File "%s" was not created: %s!', $targetFilePath, $result ?: 'maybe missing support for webp?'));
+            throw new ImageNotCreatedException(\sprintf('File "%s" was not created: %s!', $targetFilePath, $result ?: 'maybe missing support for webp?'), 1749579171);
         }
     }
 
@@ -54,12 +55,9 @@ final class MagickConverter extends AbstractConverter
             return $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_stripColorProfileCommand'];
         }
 
-        return implode(
-                ' ',
-                array_map(
-                    CommandUtility::escapeShellArgument(...),
-                    $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_stripColorProfileParameters'] ?? [],
-                ),
-            );
+        return implode(' ', array_map(
+            CommandUtility::escapeShellArgument(...),
+            $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_stripColorProfileParameters'] ?? [],
+        ));
     }
 }

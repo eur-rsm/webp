@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Plan2net\Webp\EventListener;
 
 use Plan2net\Webp\Converter\Exception\ConvertedFileLargerThanOriginalException;
+use Plan2net\Webp\Converter\Exception\ImageNotCreatedException;
 use Plan2net\Webp\Converter\Exception\WillNotRetryWithConfigurationException;
 use Plan2net\Webp\Exception\InvalidParametersForMimeType;
 use Plan2net\Webp\Service\Configuration;
@@ -74,7 +75,7 @@ final class AfterFileProcessing
 
                 // This will add or update
                 $processedFileRepository->add($processedFileWebp);
-            } catch (InvalidParametersForMimeType $e) {
+            } catch (InvalidParametersForMimeType | ImageNotCreatedException $e) {
                 $logger->debug($e->getMessage());
             } catch (WillNotRetryWithConfigurationException $e) {
                 $logger->notice($e->getMessage());
@@ -84,7 +85,7 @@ final class AfterFileProcessing
             } catch (\Exception $e) {
                 $logger->error(
                     \sprintf(
-                        'Failed to convert image "%s" to webp with: %s',
+                        'An unknown error occured for image "%s" to webp with: %s',
                         $processedFile->getIdentifier(),
                         $e->getMessage()
                     ), ['exception' => $e]
